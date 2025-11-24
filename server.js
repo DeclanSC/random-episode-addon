@@ -8,7 +8,6 @@ const builder = new addonBuilder({
   "description": "Adds a Random Episode button to TV series detail pages",
   "resources": ["meta"],
   "types": ["series"],
-  "catalogs": [],
   "idPrefixes": ["tt"]
 });
 
@@ -101,24 +100,6 @@ builder.defineMetaHandler(async (args) => {
     console.error('💥 Error in meta handler:', error);
     return { meta: null };
   }
-});
-
-// Define catalog handler (required but can return empty)
-builder.defineCatalogHandler(async (args) => {
-  console.log(`📚 Catalog handler called:`, args);
-  return { metas: [] };
-});
-
-// Define resource handler (required but can return empty)
-builder.defineResourceHandler(async (args) => {
-  console.log(`📦 Resource handler called:`, args);
-  return null;
-});
-
-// Define subtitle handler (required but can return empty)  
-builder.defineSubtitlesHandler(async (args) => {
-  console.log(`🎬 Subtitles handler called:`, args);
-  return { subtitles: [] };
 });
 
 // Start the server
