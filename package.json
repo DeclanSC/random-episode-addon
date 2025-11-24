@@ -4,18 +4,8 @@
   "description": "Stremio addon that adds a Random Episode button to series",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
-  "keywords": [
-    "stremio",
-    "stremio-addon",
-    "random",
-    "episode",
-    "tv-series"
-  ],
-  "author": "Your Name",
-  "license": "MIT",
   "dependencies": {
     "express": "^4.21.2",
     "stremio-addon-sdk": "^1.6.10"

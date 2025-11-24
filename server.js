@@ -1,53 +1,81 @@
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
-const express = require('express');
 
-const builder = new addonBuilder(require('./manifest.json'));
+// Create addon builder
+const builder = new addonBuilder({
+  "id": "com.stremio.random.episode",
+  "version": "1.0.0",
+  "name": "Random Episode Button",
+  "description": "Adds a Random Episode button to TV series detail pages",
+  "resources": ["meta"],
+  "types": ["series"],
+  "catalogs": [],
+  "idPrefixes": ["tt"]
+});
 
-// Cache for metadata to reduce requests to Cinemeta
+// Cache for metadata
 const cache = new Map();
 const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
 
+// Define meta handler - this is what adds the random episode button
 builder.defineMetaHandler(async (args) => {
+  console.log(`🔍 Meta handler called:`, { type: args.type, id: args.id });
+  
+  // Only handle series
   if (args.type !== 'series') {
+    console.log(`❌ Not a series, skipping`);
     return { meta: null };
   }
 
   const cacheKey = `${args.type}/${args.id}`;
-  const cached = cache.get(cacheKey);
   
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return { meta: cached.data };
+  // Check cache
+  if (cache.has(cacheKey)) {
+    const cached = cache.get(cacheKey);
+    if (Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`✅ Returning cached data for ${args.id}`);
+      return { meta: cached.data };
+    }
   }
 
   try {
-    console.log(`Fetching metadata for: ${args.id}`);
+    console.log(`📡 Fetching from Cinemeta for: ${args.id}`);
+    
     const cinemetaResponse = await fetch(`https://v3-cinemeta.strem.io/meta/${args.type}/${args.id}.json`);
     
     if (!cinemetaResponse.ok) {
-      console.log(`Cinemeta response not OK: ${cinemetaResponse.status}`);
+      console.log(`❌ Cinemeta error: ${cinemetaResponse.status}`);
       return { meta: null };
     }
     
     const cinemetaData = await cinemetaResponse.json();
-
-    if (!cinemetaData.meta?.videos?.length) {
-      console.log(`No videos found for: ${args.id}`);
+    
+    if (!cinemetaData.meta || !cinemetaData.meta.videos || !Array.isArray(cinemetaData.meta.videos)) {
+      console.log(`❌ No videos array in response`);
       return { meta: null };
     }
 
-    // Filter out trailers and non-episode content
+    console.log(`📺 Found ${cinemetaData.meta.videos.length} videos`);
+
+    // Filter valid episodes (with season and episode numbers)
     const episodes = cinemetaData.meta.videos.filter(video => 
-      video.season && video.episode && video.title
+      video && 
+      typeof video.season === 'number' && 
+      typeof video.episode === 'number' &&
+      video.title
     );
 
+    console.log(`🎯 ${episodes.length} valid episodes after filtering`);
+
     if (episodes.length === 0) {
-      console.log(`No valid episodes found for: ${args.id}`);
+      console.log(`❌ No valid episodes found`);
       return { meta: null };
     }
 
+    // Select random episode
     const randomEpisode = episodes[Math.floor(Math.random() * episodes.length)];
-    console.log(`Selected random episode: S${randomEpisode.season}E${randomEpisode.episode} - ${randomEpisode.title}`);
-    
+    console.log(`🎲 Selected: S${randomEpisode.season}E${randomEpisode.episode} - "${randomEpisode.title}"`);
+
+    // Create enhanced meta with random episode link
     const enhancedMeta = {
       ...cinemetaData.meta,
       links: [
@@ -66,83 +94,54 @@ builder.defineMetaHandler(async (args) => {
       timestamp: Date.now()
     });
 
+    console.log(`✅ Successfully enhanced meta with random episode button`);
     return { meta: enhancedMeta };
 
   } catch (error) {
-    console.error('Error fetching from Cinemeta:', error);
+    console.error('💥 Error in meta handler:', error);
     return { meta: null };
   }
 });
 
-// Create express app
-const app = express();
-
-// Add CORS headers
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
+// Define catalog handler (required but can return empty)
+builder.defineCatalogHandler(async (args) => {
+  console.log(`📚 Catalog handler called:`, args);
+  return { metas: [] };
 });
 
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Stremio Random Episode Addon',
-    endpoints: {
-      manifest: '/manifest.json',
-      health: '/health'
-    }
-  });
+// Define resource handler (required but can return empty)
+builder.defineResourceHandler(async (args) => {
+  console.log(`📦 Resource handler called:`, args);
+  return null;
 });
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
-});
-
-// Serve manifest
-app.get('/manifest.json', (req, res) => {
-  res.json(require('./manifest.json'));
-});
-
-// Get the addon interface
-const addonInterface = builder.getInterface();
-
-// Add Stremio addon routes manually
-app.get('/:resource/:type/:id.json', async (req, res) => {
-  const { resource, type, id } = req.params;
-  
-  try {
-    const result = await addonInterface.get({ resource, type, id });
-    if (result) {
-      res.json(result);
-    } else {
-      res.status(404).json({ error: 'Not found' });
-    }
-  } catch (error) {
-    console.error('Error handling addon request:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+// Define subtitle handler (required but can return empty)  
+builder.defineSubtitlesHandler(async (args) => {
+  console.log(`🎬 Subtitles handler called:`, args);
+  return { subtitles: [] };
 });
 
 // Start the server
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
-  console.log(`🚀 Stremio Random Episode Addon running on port ${port}`);
-  console.log(`📄 Manifest: http://localhost:${port}/manifest.json`);
-  console.log(`❤️ Health: http://localhost:${port}/health`);
-  
-  // Log the Replit URL if running on Replit
-  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-    const replitUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-    console.log(`🌐 Replit URL: ${replitUrl}`);
-    console.log(`💡 Install in Stremio using: ${replitUrl}/manifest.json`);
+serveHTTP(builder.getInterface(), { port }, (err, url) => {
+  if (err) {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
   }
+  
+  console.log(`🚀 Stremio Random Episode Addon running!`);
+  console.log(`📄 Addon URL: ${url}`);
+  console.log(`📋 Manifest: ${url}/manifest.json`);
+  
+  // Test URLs
+  console.log(`\n🧪 Test these URLs in your browser:`);
+  console.log(`Game of Thrones: ${url}/meta/series/tt0944947.json`);
+  console.log(`Breaking Bad: ${url}/meta/series/tt0903747.json`);
+  console.log(`The Office: ${url}/meta/series/tt0386676.json`);
 });
 
-// Clean cache periodically
+// Clean cache hourly
 setInterval(() => {
   const now = Date.now();
   let cleaned = 0;
@@ -155,10 +154,4 @@ setInterval(() => {
   if (cleaned > 0) {
     console.log(`🧹 Cleaned ${cleaned} expired cache entries`);
   }
-}, 1000 * 60 * 60); // Clean every hour
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('🛑 Shutting down addon...');
-  process.exit(0);
-});
+}, 60 * 60 * 1000);
