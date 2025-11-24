@@ -74,7 +74,7 @@ builder.defineMetaHandler(async (args) => {
   }
 });
 
-// Create express app for better Replit compatibility
+// Create express app
 const app = express();
 
 // Add CORS headers
@@ -106,20 +106,40 @@ app.get('/manifest.json', (req, res) => {
   res.json(require('./manifest.json'));
 });
 
-// Start the Stremio addon server
-const port = process.env.PORT || 3000;
-
 // Get the addon interface
 const addonInterface = builder.getInterface();
 
-// Mount the addon interface
-app.use(addonInterface);
+// Add Stremio addon routes manually
+app.get('/:resource/:type/:id.json', async (req, res) => {
+  const { resource, type, id } = req.params;
+  
+  try {
+    const result = await addonInterface.get({ resource, type, id });
+    if (result) {
+      res.json(result);
+    } else {
+      res.status(404).json({ error: 'Not found' });
+    }
+  } catch (error) {
+    console.error('Error handling addon request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Start the server
+const port = process.env.PORT || 3000;
+
 app.listen(port, () => {
   console.log(`🚀 Stremio Random Episode Addon running on port ${port}`);
-  console.log(`💡 Install in Stremio using: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/manifest.json`);
-  console.log(`🌐 Health check: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/health`);
+  console.log(`📄 Manifest: http://localhost:${port}/manifest.json`);
+  console.log(`❤️ Health: http://localhost:${port}/health`);
+  
+  // Log the Replit URL if running on Replit
+  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+    const replitUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+    console.log(`🌐 Replit URL: ${replitUrl}`);
+    console.log(`💡 Install in Stremio using: ${replitUrl}/manifest.json`);
+  }
 });
 
 // Clean cache periodically
