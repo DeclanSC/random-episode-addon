@@ -58,12 +58,15 @@ builder.defineMetaHandler(async (args) => {
     console.log(`📺 Found ${cinemetaData.meta.videos.length} videos`);
 
     // Filter valid episodes (with season and episode numbers)
-    const episodes = cinemetaData.meta.videos.filter(video => 
-      video && 
-      typeof video.season === 'number' && 
-      typeof video.episode === 'number' &&
-      video.title
-    );
+    const episodes = cinemetaData.meta.videos.filter(video => {
+      if (!video || !video.id) return false;
+      
+      // Accept both number and string formats for season/episode
+      const hasSeason = video.season !== undefined && video.season !== null;
+      const hasEpisode = video.episode !== undefined && video.episode !== null;
+      
+      return hasSeason && hasEpisode;
+    });
 
     console.log(`🎯 ${episodes.length} valid episodes after filtering`);
 
