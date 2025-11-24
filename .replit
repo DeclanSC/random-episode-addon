@@ -1,29 +1,9 @@
-language = "nodejs"
 run = "npm start"
-
-[nix]
-channel = "stable"
-
-[env]
-PATH = "/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/usr/bin:/usr/sbin"
-
-[git]
-enableGitHubIntegration = true
+language = "nodejs"
+entrypoint = "server.js"
 
 [deployment]
-deploymentTarget = "cloudrun"
 run = ["npm", "start"]
 
-[unitTest]
-language = "nodejs"
-
-[languages.javascript]
-pattern = "**/*.js"
-
-[packager]
-language = "nodejs"
-
-[packager.features]
-packageSearch = true
-guessImports = true
-enabled = true
+[env]
+VIRTUAL_PORT = "3000"
