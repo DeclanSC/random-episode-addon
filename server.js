@@ -1,4 +1,5 @@
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
+const fetch = require('node-fetch');
 
 // Create addon builder
 const builder = new addonBuilder({
