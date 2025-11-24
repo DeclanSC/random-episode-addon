@@ -9,7 +9,6 @@
   "catalogs": [],
   "idPrefixes": ["tt"],
   "background": "#0d0d0d",
-  "contactEmail": "your-email@example.com",
   "behaviorHints": {
     "configurable": false,
     "configurationRequired": false
