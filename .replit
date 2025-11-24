@@ -1,9 +1,13 @@
 run = "npm start"
 language = "nodejs"
 entrypoint = "server.js"
+modules = ["nodejs-16"]
 
 [deployment]
 run = ["npm", "start"]
 
 [env]
 VIRTUAL_PORT = "3000"
+
+[nix]
+channel = "stable-25_05"
