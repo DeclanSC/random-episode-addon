@@ -109,24 +109,17 @@ app.get('/manifest.json', (req, res) => {
 // Start the Stremio addon server
 const port = process.env.PORT || 3000;
 
-serveHTTP(builder.getInterface(), { port }, (err, addonUrl) => {
-  if (err) {
-    console.error('Error serving Stremio addon:', err);
-    process.exit(1);
-  }
-  
-  console.log(`🎬 Stremio Random Episode Addon running at: ${addonUrl}`);
-  console.log(`🌐 Health check available at: http://localhost:${port}/`);
-  console.log(`📄 Manifest available at: http://localhost:${port}/manifest.json`);
-  
-  // Also start the express server on the same port
-  const interfaceRouter = builder.getInterface();
-  app.use(interfaceRouter);
-  
-  app.listen(port, () => {
-    console.log(`🚀 Server started on port ${port}`);
-    console.log(`💡 Install in Stremio using: ${addonUrl}/manifest.json`);
-  });
+// Get the addon interface
+const addonInterface = builder.getInterface();
+
+// Mount the addon interface
+app.use(addonInterface);
+
+// Start the server
+app.listen(port, () => {
+  console.log(`🚀 Stremio Random Episode Addon running on port ${port}`);
+  console.log(`💡 Install in Stremio using: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/manifest.json`);
+  console.log(`🌐 Health check: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/health`);
 });
 
 // Clean cache periodically
