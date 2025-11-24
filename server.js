@@ -9,7 +9,8 @@ const builder = new addonBuilder({
   "description": "Adds a Random Episode button to TV series detail pages",
   "resources": ["meta"],
   "types": ["series"],
-  "idPrefixes": ["tt"]
+  "idPrefixes": ["tt"],
+  "catalogs": []
 });
 
 // Cache for metadata
