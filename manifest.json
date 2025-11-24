@@ -1,0 +1,17 @@
+{
+  "id": "com.stremio.random.episode",
+  "version": "1.0.0",
+  "name": "Random Episode Button",
+  "description": "Adds a Random Episode button to TV series detail pages. Click to jump to a random episode!",
+  "logo": "https://cdn-icons-png.flaticon.com/512/3291/3291691.png",
+  "resources": ["meta"],
+  "types": ["series"],
+  "catalogs": [],
+  "idPrefixes": ["tt"],
+  "background": "#0d0d0d",
+  "contactEmail": "your-email@example.com",
+  "behaviorHints": {
+    "configurable": false,
+    "configurationRequired": false
+  }
+}
